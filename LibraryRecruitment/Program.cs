@@ -27,7 +27,9 @@ var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
+
+app.UseMiddleware<LogMiddleware>();
 
 if (!app.Environment.IsProduction())
 {
@@ -35,10 +37,37 @@ if (!app.Environment.IsProduction())
     app.UseSwaggerUI();
 }
 
-app.UseCors("AllowAll");
+//app.UseCors("AllowAll");
+
+app.UseCors(policy => policy
+.SetIsOriginAllowed((_) => true)
+.AllowAnyMethod()
+.AllowAnyHeader()
+.AllowCredentials());
 
 app.UseAuthorization();
 
 app.MapControllers();
 
 app.Run();
+
+return;
+
+public class LogMiddleware
+{
+    private readonly RequestDelegate _next;
+
+    public LogMiddleware(RequestDelegate next)
+    {
+        _next = next;
+    }
+
+    public async Task InvokeAsync(HttpContext context)
+    {
+        // Log the request path
+        Console.WriteLine($"Received request: {context.Request.Path}");
+        
+        // Call the next middleware in the pipeline
+        await _next(context);
+    }
+}
